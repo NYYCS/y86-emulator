@@ -44,6 +44,8 @@ interface CPUState {
   STAT: StatCode;
 }
 
+let called = false;
+
 const history = ref<CPUState[]>([]);
 const halting = computed(() => {
   if (history.value.length == 0) return true;
@@ -59,29 +61,32 @@ export function useCpu() {
     return history.value[cycle.value];
   });
 
-  watchEffect(async () => {
-    if (!file.value) return;
-    const res = await axios.post("/exec/" + file?.value.filename);
-    history.value = res.data.history;
-    cycle.value = 0;
-  });
+  if (!called) {
+    called = true;
+    watchEffect(async () => {
+      if (!file.value) return;
+      const res = await axios.post("/exec/" + file?.value.filename);
+      history.value = res.data.history;
+      cycle.value = 0;
+    });
 
-  watch(
-    () =>
-      cycle.value ===
-      Math.ceil(history.value.length / HISTORY_BATCH_SIZE) *
-        HISTORY_BATCH_SIZE *
-        0.8,
-    async () => {
-      if (cycle.value === HISTORY_BATCH_SIZE * 0.8 && !halting.value) {
-        const res = await axios.post(
-          "/exec/" + file.value!.filename,
-          history.value.at(-1)
-        );
-        history.value = [...history.value, ...res.data.history];
+    watch(
+      () =>
+        cycle.value ===
+        Math.ceil(history.value.length / HISTORY_BATCH_SIZE) *
+          HISTORY_BATCH_SIZE *
+          0.8,
+      async () => {
+        if (cycle.value === HISTORY_BATCH_SIZE * 0.8 && !halting.value) {
+          const res = await axios.post(
+            "/exec/" + file.value!.filename,
+            history.value.at(-1)
+          );
+          history.value = [...history.value, ...res.data.history];
+        }
       }
-    }
-  );
+    );
+  }
 
   return { history, halting, cycle, state };
 }

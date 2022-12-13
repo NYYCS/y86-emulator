@@ -1,12 +1,25 @@
 <script setup lang="ts">
-import { useYoFile } from "../composables/useYoFile";
+import { getYoFile, useYoFile } from "../composables/useYoFile";
 import { useApi } from "../composables/useApi";
 
 const axios = useApi();
-
 const { file: currentFile, files } = useYoFile();
 
-function uploadFile() {}
+async function upload(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.item(0);
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  await axios.post("/yo_files", { formData });
+  await getYoFile();
+
+  currentFile.value = files.value.find(
+    (yoFile) => yoFile.filename === file.name
+  );
+}
 </script>
 
 <template>
@@ -14,7 +27,13 @@ function uploadFile() {}
     <h2>FILES</h2>
     <div class="files">
       <div class="files-meta">
-        <span class="add-file">{{ "DIRECTORY: yo_files/ +" }}</span>
+        <span class="add-file">
+          {{ "DIRECTORY: yo_files/" }}
+          <label for="file-upload" class="add-file">
+            {{ "ADD FILE +" }}
+          </label>
+          <input @change="upload" id="file-upload" type="file" />
+        </span>
       </div>
       <ul>
         <li
@@ -42,10 +61,6 @@ function uploadFile() {}
   align-items: center;
   margin-bottom: 1em;
   font-size: 1rem;
-}
-
-.add-file {
-  cursor: pointer;
 }
 .files {
   display: flex;
@@ -76,5 +91,11 @@ li:not(.active):hover::before {
   content: ">";
   margin-right: 0.5em;
   font-weight: bold;
+}
+input[type="file"] {
+  display: none;
+}
+.add-file {
+  cursor: pointer;
 }
 </style>

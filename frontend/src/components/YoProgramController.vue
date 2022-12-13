@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useYoFile } from "../composables/useYoFile";
-import { useCpu, StatCode } from "../composables/useCpu";
+import { useCpu } from "../composables/useCpu";
 
 const { history, halting, cycle } = useCpu();
 const { file } = useYoFile();
@@ -43,7 +43,7 @@ watch(
 <template>
   <div class="yo-program-controller">
     <div class="progress-bar">
-      <span> {{ halting ? `${progress}%` : "CALC" }}</span>
+      <span> {{ halting ? `${progress}%` : "?%" }}</span>
       [
       <progress
         style="transform: translateX(-1px) translateY(-1px)"
