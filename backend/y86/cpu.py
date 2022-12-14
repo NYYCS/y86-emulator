@@ -21,7 +21,7 @@ class Memory:
             raise BadAddress
         return self._storage.get(addr, 0)
 
-    def get_word(self, addr):
+    def get_quad(self, addr):
         if addr < 0:
             raise BadAddress
         word = 0
@@ -35,7 +35,7 @@ class Memory:
             raise BadAddress
         self._storage[addr] = byte & 255
 
-    def set_word(self, addr, word):
+    def set_quad(self, addr, word):
         if addr < 0:
             raise BadAddress
         for pos in range(addr, addr + 8):
@@ -45,7 +45,7 @@ class Memory:
     def to_json(self):
         data = {}
         for addr, _ in itertools.groupby(self._storage.keys(), lambda x: math.floor(x / 8) * 8):
-            word = self.get_word(addr)
+            word = self.get_quad(addr)
             if word:
                 data[addr] = word
         return data
@@ -54,7 +54,7 @@ class Memory:
     def from_json(cls, data):
         mem = cls()
         for addr, word in data.items():
-            mem.set_word(int(addr), word)
+            mem.set_quad(int(addr), word)
         return mem
 
     def load_yo_buffer(self, buffer):
@@ -165,7 +165,7 @@ class OPCode:
 
 
 class CONDCode:
-    TRUE = 0x0
+    NC = 0x0
     LE   = 0x1
     L    = 0x2
     E    = 0x3
@@ -234,7 +234,7 @@ class CPU:
         SF = bool(self.CC['SF'])
         OF = bool(self.CC['OF'])
 
-        if ifun == CONDCode.TRUE:
+        if ifun == CONDCode.NC:
             return True
         elif ifun == CONDCode.LE:
             return ZF ^ OF | SF
@@ -295,24 +295,25 @@ class CPU:
             elif opcode == OPCode.IRMOVQ:
                 _, ra = bisect_byte(self.MEM.get_byte(self.PC + 1))
                 val_p = self.PC + 10
-                val_c = self.MEM.get_word(self.PC + 2)
+                val_c = self.MEM.get_quad(self.PC + 2)
                 self.REG[ra] = val_c
                 self.PC = val_p
             elif opcode == OPCode.RMMOVQ:
                 ra, rb = bisect_byte(self.MEM.get_byte(self.PC + 1))
-                val_c = self.MEM.get_word(self.PC + 2)
+                val_p = self.PC + 10
+                val_c = self.MEM.get_quad(self.PC + 2)
                 val_a = self.REG[ra]
                 val_b = self.REG[rb]
                 val_e = val_a + val_b
-                self.MEM.set_word(val_e, val_a)
-                self.PC = self.PC + 10
+                self.MEM.set_quad(val_e, val_a)
+                self.PC = val_p
             elif opcode == OPCode.MRMOVQ:
                 ra, rb = bisect_byte(self.MEM.get_byte(self.PC + 1))
-                val_c = self.MEM.get_word(self.PC + 2)
+                val_c = self.MEM.get_quad(self.PC + 2)
                 val_p = self.PC + 10
                 val_b = self.REG[rb]
                 val_e = val_b + val_c
-                val_m = self.MEM.get_word(val_e)
+                val_m = self.MEM.get_quad(val_e)
                 self.REG[ra] = val_m
                 self.PC = val_p
             elif opcode in (OPCode.ADDQ,
@@ -336,17 +337,17 @@ class CPU:
                             OPCode.JG):
                 val_p = self.PC + 9
                 if self.cond(ifun):
-                    val_c = self.MEM.get_word(self.PC + 1)
+                    val_c = self.MEM.get_quad(self.PC + 1)
                     self.PC = val_c
                 else:
                     self.PC = val_p
             elif opcode == OPCode.CALL:
-                val_c = self.MEM.get_word(self.PC + 1)
+                val_c = self.MEM.get_quad(self.PC + 1)
                 val_p = self.PC + 9
                 val_b = self.REG[Registers.RSP]
                 val_e = val_b - 8
 
-                self.MEM.set_word(val_e, val_p)
+                self.MEM.set_quad(val_e, val_p)
                 self.REG[Registers.RSP] = val_e
                 self.PC = val_c
             elif opcode == OPCode.RET:
@@ -354,7 +355,7 @@ class CPU:
                 val_a = self.REG[Registers.RSP]
                 val_b = self.REG[Registers.RSP]
                 val_e = val_b + 8
-                val_m = self.MEM.get_word(val_a)
+                val_m = self.MEM.get_quad(val_a)
                 self.REG[Registers.RSP] = val_e
                 self.PC = val_m
             elif opcode == OPCode.PUSHQ:
@@ -364,7 +365,7 @@ class CPU:
                 val_b = self.REG[Registers.RSP]
                 val_e = val_b - 8
                 self.REG[Registers.RSP] = val_e
-                self.MEM.set_word(val_e, val_a)
+                self.MEM.set_quad(val_e, val_a)
                 self.PC = val_p
             elif opcode == OPCode.POPQ:
                 ra, _ = bisect_byte(self.MEM.get_byte(self.PC + 1))
@@ -372,7 +373,7 @@ class CPU:
                 val_a = self.REG[Registers.RSP]
                 val_b = self.REG[Registers.RSP]
                 val_e = val_b + 8
-                val_m = self.MEM.get_word(val_a)
+                val_m = self.MEM.get_quad(val_a)
                 self.REG[Registers.RSP] = val_e
                 self.REG[ra] = val_m
                 self.PC = val_p
@@ -382,7 +383,7 @@ class CPU:
                             OPCode.IXORQ):
                 _, ra = bisect_byte(self.MEM.get_byte(self.PC + 1))
                 val_p = self.PC + 10
-                val_c = self.MEM.get_word(self.PC + 2)
+                val_c = self.MEM.get_quad(self.PC + 2)
                 val_a = self.REG[ra]
                 val_e = self.op(ifun)(val_c, val_a)
                 self.update_CC(ifun, val_c, val_a, val_e)

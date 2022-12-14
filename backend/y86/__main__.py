@@ -4,7 +4,7 @@ import sys
 
 from cpu import CPU
 
-BATCH_SIZE = 10000
+HISTORY_BATCH_SIZE = 10000
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -12,15 +12,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     cpu = CPU()
-    cpu.load_program(sys.stdin.read())
-    history = []
-
     if args.state:
         cpu.state = args.state
+    else:
+        cpu.load_program(sys.stdin.read())
+    history = []
     
     for state in cpu.run():
         history.append(state)
-        if len(history) == BATCH_SIZE:
+        if len(history) == HISTORY_BATCH_SIZE:
             break
 
     sys.stdout.write(json.dumps(history))
