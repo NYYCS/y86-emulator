@@ -10,6 +10,7 @@ interface Yo {
   file: Ref<YoFile | undefined>;
   files: Ref<YoFile[]>;
   context: ComputedRef<YoFileContext>;
+  uploadYoFile: (file: File) => Promise<void>;
 }
 
 const file = ref<YoFile | undefined>();
@@ -30,6 +31,19 @@ const context = computed(() => {
     }, {} as Record<number, number>);
 });
 
+export async function uploadYoFile(uploadedFile: File) {
+  const formData = new FormData();
+  formData.append("file", uploadedFile);
+  await axios.post("/yo_files", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  await getYoFile();
+
+  file.value = files.value.find(
+    (yoFile) => yoFile.filename === uploadedFile.name
+  );
+}
+
 export async function getYoFile() {
   const res = await axios.get("/yo-files");
   file.value = res.data.files[0];
@@ -39,5 +53,5 @@ export async function getYoFile() {
 await getYoFile();
 
 export function useYoFile() {
-  return { file, files, context } as Yo;
+  return { file, files, context, uploadYoFile } as Yo;
 }

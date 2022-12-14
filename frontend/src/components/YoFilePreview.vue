@@ -3,7 +3,7 @@ import { ref, computed, watchEffect } from "vue";
 import { useCpu } from "../composables/useCpu";
 import { useYoFile } from "../composables/useYoFile";
 
-const { file, files, context } = useYoFile();
+const { file, context } = useYoFile();
 const { state } = useCpu();
 
 const lineNumber = computed(() =>
@@ -31,7 +31,7 @@ watchEffect(() => {
           <p
             v-for="(text, i) in file.content.split('\n')"
             :id="`line-${i}`"
-            :class="[i === context[state ? state.PC : 0] && 'active']"
+            :class="[i === lineNumber && 'active']"
           >
             {{ text }}
           </p>

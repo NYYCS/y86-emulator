@@ -44,12 +44,6 @@ function hexify(value: number) {
     "0x" + BigInt.asUintN(64, BigInt(value)).toString(16).padStart(16, "0")
   );
 }
-
-const el = ref<HTMLElement>();
-
-onMounted(() => {
-  el.value?.addEventListener("scroll", () => console.log("SCROLL"));
-});
 </script>
 
 <template>
@@ -185,7 +179,7 @@ onMounted(() => {
           <div class="stat-panel">
             <ul>
               <li>
-                <span class="stat-label" style="margin-right: 1em">STATUS</span>
+                <span class="stat-label" style="margin-right: 1em">STAT</span>
                 <span class="stat-value" :key="state?.STAT">
                   {{ STAT_CODE[state?.STAT ?? 1] }}
                 </span>

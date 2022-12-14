@@ -1,24 +1,13 @@
 <script setup lang="ts">
-import { getYoFile, useYoFile } from "../composables/useYoFile";
-import { useApi } from "../composables/useApi";
+import { useYoFile } from "../composables/useYoFile";
 
-const axios = useApi();
-const { file: currentFile, files } = useYoFile();
+const { file: currentFile, files, uploadYoFile } = useYoFile();
 
 async function upload(event: Event) {
   const target = event.target as HTMLInputElement;
-  const file = target.files?.item(0);
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  await axios.post("/yo_files", { formData });
-  await getYoFile();
-
-  currentFile.value = files.value.find(
-    (yoFile) => yoFile.filename === file.name
-  );
+  const files = target.files;
+  if (!files) return;
+  uploadYoFile(files[0]);
 }
 </script>
 
