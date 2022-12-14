@@ -1,0 +1,16 @@
+{
+    "private": true,
+    "name": "y86-emulator",
+    "workspaces": [
+        "backend",
+        "frontend"
+    ],
+    "scripts": {
+        "client": "yarn workspace frontend dev",
+        "server": "yarn workspace backend dev",
+        "dev": "concurrently --kill-others-on-fail \"yarn server\"  \"yarn client\""
+    },
+    "dependencies": {
+        "concurrently": "^7.6.0"
+    }
+}
